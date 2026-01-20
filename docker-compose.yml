@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+
+  nats-server:
+    image: nats:latest
+    ports:
+      # - "4222:4222"
+      # - "6222:6222"
+      - "8222:8222"
+    restart: always
+
+  client-gateway:
+    build: ./client-gateway
+    ports:
+      - ${CLIENT_GATEWAY_PORT}:4000
+    environment:
+      - NODE_ENV=development
+      - PORT=4000
+      - NATS_SERVERS=nats://nats-server:4222
+    volumes:
+      - ./client-gateway/src:/usr/src/app/src
+    restart: always
+    command: pnpm run start:dev
+
+  products-service:
+    build: ./products
+    ports:
+      - "4100:4100"
+    volumes:
+      - ./products/src:/usr/src/app/src
+      - ./products/prisma:/usr/src/app/prisma
+    command: pnpm run start:dev
+    environment:
+      - NODE_ENV=development
+      - PORT=4100
+      - HOST=127.0.0.1
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=file:./dev.db
+    restart: always
+
+
+  orders-service:
+    depends_on:
+      - orders-db
+    build: ./orders
+    volumes:
+      - ./orders/src:/usr/src/app/src
+    ports:
+      - "4200:4200"
+    environment:
+      - NODE_ENV=development
+      - PORT=4200
+      - HOST=127.0.0.1
+      - NATS_SERVERS=nats://nats-server:4222
+      - DATABASE_URL=postgresql://postgres:test1234@orders-db:5432/ordersdb
+    restart: always
+    command: pnpm run start:dev
+
+  orders-db:
+    container_name: orders-database
+    image: postgres:16.2
+    restart: always
+    volumes:
+      - ./orders/postgres-data:/var/lib/postgresql/data
+    ports:
+      - '5432:5432'
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=test1234
+      - POSTGRES_DB=ordersdb
