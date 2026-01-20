@@ -1,6 +1,3 @@
-[submodule "client-gateway"]
-	path = client-gateway
-	url = https://github.com/viktorhugo/client-gateway.git
 [submodule "orders"]
 	path = orders
 	url = https://github.com/viktorhugo/orders.git
