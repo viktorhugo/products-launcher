@@ -13,11 +13,11 @@ services:
   client-gateway:
     build: ./client-gateway
     ports:
-      - ${CLIENT_GATEWAY_PORT}:4000
+      - ${CLIENT_GATEWAY_PORT}:5000
     environment:
       - NODE_ENV=development
-      - PORT=4000
-      - NATS_SERVERS=nats://nats-server:4222
+      - PORT=5000
+      - NATS_SERVERS=${NATS_SERVERS}
     volumes:
       - ./client-gateway/src:/usr/src/app/src
     restart: always
@@ -35,7 +35,7 @@ services:
       - NODE_ENV=development
       - PORT=4100
       - HOST=127.0.0.1
-      - NATS_SERVERS=nats://nats-server:4222
+      - NATS_SERVERS=${NATS_SERVERS}
       - DATABASE_URL=file:./dev.db
     restart: always
 
@@ -52,7 +52,7 @@ services:
       - NODE_ENV=development
       - PORT=4200
       - HOST=127.0.0.1
-      - NATS_SERVERS=nats://nats-server:4222
+      - NATS_SERVERS=${NATS_SERVERS}
       - DATABASE_URL=postgresql://postgres:test1234@orders-db:5432/ordersdb
     restart: always
     command: pnpm run start:dev
@@ -69,3 +69,19 @@ services:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=test1234
       - POSTGRES_DB=ordersdb
+
+  payments-service:
+    build: ./payments
+    volumes:
+      - ./payments/src:/usr/src/app/src
+    ports:
+      - ${PAYMENTS_PORT}:${PAYMENTS_PORT}
+    environment:
+      - PORT=${PAYMENTS_PORT}
+      - NATS_SERVERS=${NATS_SERVERS}
+      - STRIPE_API_KEY_SECRET=${STRIPE_API_KEY_SECRET}
+      - STRIPE_WEBHOOK_SIGNING_SECRET=${STRIPE_WEBHOOK_SIGNING_SECRET}
+      - STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
+      - STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
+    restart: always
+    command: pnpm run start:dev

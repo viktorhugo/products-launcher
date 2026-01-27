@@ -7,3 +7,6 @@
 [submodule "client-gateway"]
 	path = client-gateway
 	url = https://github.com/viktorhugo/client-gateway.git
+[submodule "payments"]
+	path = payments
+	url = https://github.com/viktorhugo/payments.git
