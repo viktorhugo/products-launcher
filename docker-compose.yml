@@ -85,6 +85,9 @@ services:
       - AWS_ACCESS_KEY_ID=test
       - AWS_SECRET_ACCESS_KEY=test
       - DYNAMODB_ENDPOINT=http://localstack:4566
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - PASSWORD_SALT_ROUNDS=${PASSWORD_SALT_ROUNDS}
     restart: always
     command: pnpm run start:dev
     networks:
