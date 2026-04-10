@@ -1,0 +1,112 @@
+version: '3.8'
+
+services:
+
+  nats-server:
+    image: nats:latest
+    ports:
+      # - "4222:4222"
+      # - "6222:6222"
+      - "8222:8222"
+    restart: always
+    networks:
+      - microservices-network
+  
+  
+
+  client-gateway:
+    image: southamerica-east1-docker.pkg.dev/microservices-490221/image-registry/client-gateway
+    build: 
+      context: ./client-gateway
+      dockerfile: dockerfile.prod
+    restart: always
+    networks:
+      - microservices-network
+    ports:
+      - ${CLIENT_GATEWAY_PORT}:${CLIENT_GATEWAY_PORT}
+    environment:
+      - NODE_ENV=development
+      - PORT=${CLIENT_GATEWAY_PORT}
+      - NATS_SERVERS=${NATS_SERVERS}
+
+  products-service:
+    image: southamerica-east1-docker.pkg.dev/microservices-490221/image-registry/products
+    build:
+      context: ./products
+      dockerfile: dockerfile.prod
+    ports:
+      - "4100:4100"
+    environment:
+      - NODE_ENV=development
+      - PORT=4100
+      - HOST=127.0.0.1
+      - NATS_SERVERS=${NATS_SERVERS}
+      - DATABASE_URL=file:./dev.db
+    restart: always
+    networks:
+      - microservices-network
+
+
+  orders-service:
+    image: southamerica-east1-docker.pkg.dev/microservices-490221/image-registry/orders
+    build: 
+      context: ./orders
+      dockerfile: dockerfile.prod
+      args:
+        - NATS_SERVERS=${NATS_SERVERS}
+        - ORDERS_DATABASE_URL=${ORDERS_DATABASE_URL}
+    ports:
+      - "4200:4200"
+    environment:
+      - NODE_ENV=development
+      - PORT=4200
+      - HOST=127.0.0.1
+      - NATS_SERVERS=${NATS_SERVERS}
+      - DATABASE_URL=${ORDERS_DATABASE_URL}
+    restart: always
+  
+  auth-service:
+    image: southamerica-east1-docker.pkg.dev/microservices-490221/image-registry/auth
+    build:
+      context: ./auth
+      dockerfile: dockerfile.prod
+    ports:
+      - "4600:4600"
+    environment:
+      - NODE_ENV=development
+      - PORT=4600
+      - HOST=127.0.0.1
+      - NATS_SERVERS=${NATS_SERVERS}
+      - AUTH_URL=${AUTH_URL}
+      - AWS_REGION=us-east-1
+      - AWS_ACCESS_KEY_ID=test
+      - AWS_SECRET_ACCESS_KEY=test
+      - DYNAMODB_ENDPOINT=http://localstack:4566
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - PASSWORD_SALT_ROUNDS=${PASSWORD_SALT_ROUNDS}
+    restart: always
+    networks:
+      - microservices-network
+
+  payments-service:
+    image: southamerica-east1-docker.pkg.dev/microservices-490221/image-registry/payments
+    build:
+      context: ./payments
+      dockerfile: dockerfile.prod
+    ports:
+      - ${PAYMENTS_PORT}:${PAYMENTS_PORT}
+    environment:
+      - PORT=${PAYMENTS_PORT}
+      - NATS_SERVERS=${NATS_SERVERS}
+      - STRIPE_API_KEY_SECRET=${STRIPE_API_KEY_SECRET}
+      - STRIPE_WEBHOOK_SIGNING_SECRET=${STRIPE_WEBHOOK_SIGNING_SECRET}
+      - STRIPE_SUCCESS_URL=${STRIPE_SUCCESS_URL}
+      - STRIPE_CANCEL_URL=${STRIPE_CANCEL_URL}
+    restart: always
+    networks:
+      - microservices-network
+
+networks:
+  microservices-network:
+    driver: bridge
